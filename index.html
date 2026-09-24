@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14110f">
+<title>Mein Leseregal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14110f; --bg2:#1d1916; --card:#221d19; --card2:#2b2521;
+    --line:#3a322c; --line2:#4a4038;
+    --text:#f3ece3; --muted:#b3a798; --muted2:#8a7d6f;
+    --accent:#e0a458; --accent2:#c8823a; --accent-ink:#2a1c0a;
+    --green:#7bbf7b; --blue:#7aa6d6; --red:#e0736b; --purple:#b48fd6;
+    --radius:16px; --radius-sm:11px;
+    --shadow:0 8px 30px rgba(0,0,0,.4);
+    --serif:'Fraunces',Georgia,serif;
+    --sans:'DM Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--sans); background:var(--bg); color:var(--text);
+    -webkit-font-smoothing:antialiased; line-height:1.45;
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  }
+  h1,h2,h3{font-family:var(--serif); font-weight:600; margin:0}
+  button{font-family:inherit; cursor:pointer}
+  input,select,textarea{font-family:inherit}
+  a{color:var(--accent)}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--line2);border-radius:8px}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:0; z-index:40; background:rgba(20,17,15,.85);
+    backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+    padding:14px 16px calc(14px) 16px; padding-top:calc(14px + env(safe-area-inset-top));
+  }
+  .htop{display:flex; align-items:center; gap:10px}
+  .brand{display:flex; align-items:center; gap:9px; font-family:var(--serif); font-size:20px; font-weight:600}
+  .brand .logo{font-size:22px}
+  .htop .spacer{flex:1}
+  .sync-chip{
+    display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);
+    background:var(--card); border:1px solid var(--line); padding:6px 10px; border-radius:999px;
+  }
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted2)}
+  .sync-dot.on{background:var(--green)} .sync-dot.busy{background:var(--accent)} .sync-dot.off{background:var(--red)}
+  .searchbar{display:flex; gap:8px; margin-top:12px}
+  .searchbar input{
+    flex:1; background:var(--card); border:1px solid var(--line); color:var(--text);
+    padding:11px 14px; border-radius:var(--radius-sm); font-size:15px; outline:none;
+  }
+  .searchbar input:focus{border-color:var(--accent2)}
+
+  main{max-width:1000px; margin:0 auto; padding:16px}
+
+  /* ---------- Filter row ---------- */
+  .filters{display:flex; gap:8px; overflow-x:auto; padding:2px 0 10px; -webkit-overflow-scrolling:touch}
+  .filters::-webkit-scrollbar{display:none}
+  .chip{
+    white-space:nowrap; background:var(--card); border:1px solid var(--line); color:var(--muted);
+    padding:7px 13px; border-radius:999px; font-size:13px; font-weight:500; flex-shrink:0;
+  }
+  .chip.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
+  .filter-meta{display:flex; align-items:center; gap:10px; margin:2px 0 14px; flex-wrap:wrap}
+  .filter-meta select{
+    background:var(--card); border:1px solid var(--line); color:var(--muted); border-radius:9px;
+    padding:6px 9px; font-size:13px;
+  }
+  .count{font-size:13px; color:var(--muted2)}
+
+  /* ---------- Shelf grid ---------- */
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:16px}
+  @media(max-width:520px){ .grid{grid-template-columns:repeat(2,1fr); gap:13px} }
+  .book{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; cursor:pointer; transition:transform .12s, border-color .12s;
+    display:flex; flex-direction:column;
+  }
+  .book:hover{transform:translateY(-3px); border-color:var(--line2)}
+  .cover{
+    position:relative; aspect-ratio:2/3; background:linear-gradient(135deg,#2b2521,#221d19);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  .cover img{width:100%; height:100%; object-fit:cover}
+  .cover .noimg{font-size:34px; opacity:.5}
+  .type-badge{
+    position:absolute; top:8px; left:8px; font-size:11px; background:rgba(0,0,0,.6);
+    color:#fff; padding:3px 8px; border-radius:999px; backdrop-filter:blur(4px);
+  }
+  .status-badge{
+    position:absolute; top:8px; right:8px; width:11px; height:11px; border-radius:50%;
+    border:2px solid rgba(0,0,0,.35);
+  }
+  .st-unread{background:var(--muted2)} .st-reading{background:var(--blue)}
+  .st-done{background:var(--green)} .st-abandoned{background:var(--red)}
+  .progbar{position:absolute; left:0; right:0; bottom:0; height:4px; background:rgba(0,0,0,.4)}
+  .progbar span{display:block; height:100%; background:var(--accent)}
+  .bmeta{padding:10px 11px 12px}
+  .btitle{font-family:var(--serif); font-size:14.5px; font-weight:600; line-height:1.25; margin-bottom:3px;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .bauthor{font-size:12px; color:var(--muted); display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden}
+  .bseries{font-size:11px; color:var(--accent); margin-top:4px; font-weight:500}
+
+  .empty{text-align:center; padding:70px 20px; color:var(--muted2)}
+  .empty .big{font-size:46px; margin-bottom:12px}
+  .empty h3{color:var(--muted); margin-bottom:6px; font-size:18px}
+
+  /* ---------- Bottom nav ---------- */
+  nav.tabbar{
+    position:fixed; left:0; right:0; bottom:0; z-index:50; display:flex;
+    background:rgba(24,20,17,.92); backdrop-filter:blur(14px); border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  nav.tabbar button{
+    flex:1; background:none; border:none; color:var(--muted2); padding:11px 4px 10px;
+    display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:500;
+  }
+  nav.tabbar button .ico{font-size:20px; line-height:1}
+  nav.tabbar button.active{color:var(--accent)}
+  .fab-tab .ico{
+    background:var(--accent); color:var(--accent-ink); width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:26px; margin-top:-14px;
+    box-shadow:0 6px 18px rgba(224,164,88,.4); font-weight:700;
+  }
+
+  /* ---------- Modal / sheet ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:100; background:rgba(0,0,0,.6); backdrop-filter:blur(3px);
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .overlay.show{display:flex}
+  @media(min-width:640px){ .overlay{align-items:center} }
+  .sheet{
+    background:var(--bg2); width:100%; max-width:560px; max-height:92vh; overflow-y:auto;
+    border-radius:22px 22px 0 0; border:1px solid var(--line); box-shadow:var(--shadow);
+    animation:slideup .22s ease;
+  }
+  @media(min-width:640px){ .sheet{border-radius:22px} }
+  @keyframes slideup{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+  .sheet-h{
+    position:sticky; top:0; background:var(--bg2); padding:16px 18px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:12px; z-index:2;
+  }
+  .sheet-h h2{font-size:19px; flex:1}
+  .xbtn{background:var(--card); border:1px solid var(--line); color:var(--muted); width:34px; height:34px;
+    border-radius:50%; font-size:18px; display:flex; align-items:center; justify-content:center}
+  .sheet-b{padding:18px}
+
+  /* form */
+  .field{margin-bottom:15px}
+  .field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:6px; font-weight:500}
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--card); border:1px solid var(--line); color:var(--text);
+    padding:11px 13px; border-radius:var(--radius-sm); font-size:15px; outline:none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--accent2)}
+  .field textarea{resize:vertical; min-height:70px}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px}
+  .seg{display:flex; gap:6px; flex-wrap:wrap}
+  .seg button{
+    flex:1; min-width:fit-content; background:var(--card); border:1px solid var(--line); color:var(--muted);
+    padding:9px 8px; border-radius:10px; font-size:13px; font-weight:500;
+  }
+  .seg button.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
+  .btn{
+    width:100%; background:var(--accent); color:var(--accent-ink); border:none; padding:14px;
+    border-radius:var(--radius-sm); font-size:15.5px; font-weight:700; margin-top:4px;
+  }
+  .btn.sec{background:var(--card); color:var(--text); border:1px solid var(--line2)}
+  .btn.danger{background:none; color:var(--red); border:1px solid var(--red)}
+  .btn:active{transform:scale(.99)}
+  .btn:disabled{opacity:.5}
+  .btnrow{display:flex; gap:10px; margin-top:6px}
+  .btnrow .btn{margin-top:0}
+
+  /* ---------- Add: mode switch ---------- */
+  .addmode{display:flex; gap:8px; margin-bottom:16px}
+  .addmode button{flex:1; background:var(--card); border:1px solid var(--line); color:var(--muted);
+    padding:11px; border-radius:12px; font-size:13.5px; font-weight:600; display:flex; flex-direction:column; align-items:center; gap:4px}
+  .addmode button .ico{font-size:20px}
+  .addmode button.active{border-color:var(--accent); color:var(--accent); background:var(--card2)}
+
+  #scanArea{display:none}
+  #scanArea.show{display:block}
+  .scanwrap{position:relative; border-radius:var(--radius); overflow:hidden; background:#000; aspect-ratio:4/3}
+  #scanVideo{width:100%; height:100%; object-fit:cover}
+  .scanframe{position:absolute; inset:16% 12%; border:2px solid var(--accent); border-radius:12px;
+    box-shadow:0 0 0 2000px rgba(0,0,0,.35)}
+  .scanhint{text-align:center; color:var(--muted); font-size:13px; margin-top:12px}
+
+  /* search results */
+  .results{margin-top:6px}
+  .res{
+    display:flex; gap:12px; padding:11px; border:1px solid var(--line); border-radius:12px;
+    margin-bottom:10px; background:var(--card); cursor:pointer; align-items:center;
+  }
+  .res:hover{border-color:var(--line2)}
+  .res .rc{width:44px; height:64px; border-radius:6px; object-fit:cover; background:var(--card2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--muted2)}
+  .res .ri{flex:1; min-width:0}
+  .res .rt{font-family:var(--serif); font-size:15px; font-weight:600; line-height:1.2;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .res .ra{font-size:12.5px; color:var(--muted); margin-top:2px}
+  .res .rm{font-size:11.5px; color:var(--muted2); margin-top:3px}
+  .loading{text-align:center; padding:30px; color:var(--muted2); font-size:14px}
+  .spinner{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--accent);
+    border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- Detail ---------- */
+  .detail-hero{display:flex; gap:16px; margin-bottom:18px}
+  .detail-hero .dc{width:110px; aspect-ratio:2/3; border-radius:12px; object-fit:cover; flex-shrink:0;
+    background:var(--card2); display:flex; align-items:center; justify-content:center; font-size:34px; box-shadow:var(--shadow)}
+  .detail-hero .di{flex:1; min-width:0}
+  .detail-hero h2{font-size:21px; line-height:1.2; margin-bottom:5px}
+  .detail-hero .da{color:var(--muted); font-size:14px}
+  .dtags{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px}
+  .dtag{font-size:11.5px; background:var(--card); border:1px solid var(--line); color:var(--muted); padding:3px 9px; border-radius:999px}
+  .progblock{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:15px; margin-bottom:16px}
+  .progtop{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:9px}
+  .progtop .pct{font-family:var(--serif); font-size:22px; color:var(--accent)}
+  .bigbar{height:9px; background:var(--bg); border-radius:999px; overflow:hidden}
+  .bigbar span{display:block; height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:999px}
+  .pageset{display:flex; align-items:center; gap:8px; margin-top:12px}
+  .pageset input{width:80px; text-align:center}
+  .stepbtn{width:38px;height:38px;border-radius:10px;background:var(--card2);border:1px solid var(--line);color:var(--text);font-size:20px}
+
+  /* ---------- Suggestions deck ---------- */
+  .deck-wrap{max-width:420px; margin:0 auto}
+  .deckhead{text-align:center; margin-bottom:16px}
+  .deckhead h2{font-size:22px; margin-bottom:6px}
+  .deckhead p{color:var(--muted); font-size:13.5px; margin:0}
+  .scard{
+    background:var(--card); border:1px solid var(--line); border-radius:20px; overflow:hidden;
+    box-shadow:var(--shadow); animation:pop .2s ease;
+  }
+  @keyframes pop{from{transform:scale(.96);opacity:.5}to{transform:none;opacity:1}}
+  .scard .scover{width:100%; aspect-ratio:3/2.1; background:linear-gradient(135deg,#2b2521,#1d1916);
+    display:flex; align-items:center; justify-content:center; overflow:hidden}
+  .scard .scover img{max-width:60%; max-height:90%; object-fit:contain; border-radius:8px; box-shadow:var(--shadow)}
+  .scard .scover .ph{font-size:54px; opacity:.4}
+  .scard .sb{padding:18px}
+  .why{display:inline-block; font-size:12px; font-weight:600; color:var(--accent-ink); background:var(--accent);
+    padding:4px 11px; border-radius:999px; margin-bottom:10px}
+  .why.author{background:var(--blue)} .why.subject{background:var(--purple)} .why.era{background:var(--green)}
+  .scard h3{font-size:20px; line-height:1.2; margin-bottom:5px}
+  .scard .sa{color:var(--muted); font-size:14px; margin-bottom:2px}
+  .scard .sm{color:var(--muted2); font-size:12.5px; margin-top:6px}
+  .deckbtns{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px}
+  .deckbtns button{padding:14px 10px; border-radius:14px; font-size:14px; font-weight:600; border:1px solid var(--line)}
+  .db-read{background:var(--green); color:#0e2410; border-color:var(--green); grid-column:1/-1}
+  .db-part{background:var(--card); color:var(--accent)}
+  .db-no{background:var(--card); color:var(--muted)}
+  .db-skip{background:none; color:var(--muted2); grid-column:1/-1; border:none; padding:8px}
+  .deckprog{text-align:center; color:var(--muted2); font-size:12px; margin-top:14px}
+
+  /* ---------- Stats ---------- */
+  .statgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:13px; margin-bottom:22px}
+  .stat{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px}
+  .stat .n{font-family:var(--serif); font-size:30px; color:var(--accent); line-height:1}
+  .stat .l{font-size:12.5px; color:var(--muted); margin-top:6px}
+  .barlist{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:18px}
+  .barlist h3{font-size:16px; margin-bottom:14px}
+  .brow{margin-bottom:11px}
+  .brow .bl{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px}
+  .brow .bl .bv{color:var(--muted)}
+  .brow .bt{height:7px; background:var(--bg); border-radius:999px; overflow:hidden}
+  .brow .bt span{display:block; height:100%; background:var(--accent); border-radius:999px}
+
+  .toast{
+    position:fixed; bottom:calc(90px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%);
+    background:var(--card2); border:1px solid var(--line2); color:var(--text); padding:11px 18px;
+    border-radius:999px; font-size:13.5px; z-index:200; box-shadow:var(--shadow); opacity:0; pointer-events:none;
+    transition:opacity .25s, transform .25s;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(-4px)}
+  .hidden{display:none !important}
+  .infoline{font-size:12.5px;color:var(--muted2);margin-top:14px;line-height:1.5}
+  .setrow{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="htop">
+    <div class="brand"><span class="logo">📚</span> Mein Leseregal</div>
+    <div class="spacer"></div>
+    <div class="sync-chip" id="syncChip" onclick="showView('settings')">
+      <span class="sync-dot" id="syncDot"></span><span id="syncText">Lokal</span>
+    </div>
+  </div>
+  <div class="searchbar" id="searchbarWrap">
+    <input id="shelfSearch" type="search" placeholder="Im Regal suchen…" oninput="renderShelf()">
+  </div>
+</header>
+
+<main>
+  <!-- ============ SHELF ============ -->
+  <section id="view-shelf">
+    <div class="filters" id="typeFilters"></div>
+    <div class="filter-meta">
+      <select id="statusFilter" onchange="renderShelf()">
+        <option value="all">Alle Status</option>
+        <option value="reading">Lese gerade</option>
+        <option value="done">Gelesen</option>
+        <option value="unread">Ungelesen</option>
+        <option value="abandoned">Abgebrochen</option>
+      </select>
+      <select id="sortBy" onchange="renderShelf()">
+        <option value="added">Zuletzt hinzugefügt</option>
+        <option value="title">Titel A–Z</option>
+        <option value="author">Autor A–Z</option>
+        <option value="series">Serie</option>
+        <option value="progress">Fortschritt</option>
+        <option value="finished">Zuletzt gelesen</option>
+      </select>
+      <span class="count" id="shelfCount"></span>
+    </div>
+    <div class="grid" id="shelfGrid"></div>
+  </section>
+
+  <!-- ============ SUGGESTIONS ============ -->
+  <section id="view-suggest" class="hidden">
+    <div class="deck-wrap" id="deckWrap"></div>
+  </section>
+
+  <!-- ============ STATS ============ -->
+  <section id="view-stats" class="hidden">
+    <h2 style="margin-bottom:16px">Statistik</h2>
+    <div id="statsBody"></div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section id="view-settings" class="hidden">
+    <h2 style="margin-bottom:16px">Einstellungen</h2>
+    <div class="barlist">
+      <h3>Geräte-Sync</h3>
+      <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">Gib auf jedem Gerät denselben <b>Sync-Code</b> ein, um dein Regal überall gleich zu halten.</p>
+      <div class="field">
+        <label>Sync-Code</label>
+        <div class="setrow">
+          <input id="syncCodeInput" placeholder="z. B. marvin-buecher" style="flex:1">
+          <button class="btn" style="width:auto;padding:11px 18px;margin:0" onclick="saveSyncCode()">Verbinden</button>
+        </div>
+      </div>
+      <button class="btn sec" onclick="doSync(true)">Jetzt synchronisieren</button>
+      <p class="infoline" id="syncInfo"></p>
+    </div>
+    <div class="barlist">
+      <h3>Aus Bookshelf / CSV importieren</h3>
+      <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">Exportiere in der Bookshelf-App deine Bibliothek (Einstellungen → Export als CSV/Excel) und lade die Datei hier hoch. Auch Goodreads-CSV & andere Tabellen funktionieren – du bekommst eine Spalten-Vorschau.</p>
+      <button class="btn" onclick="document.getElementById('csvFile').click()">📥 CSV / Excel hochladen</button>
+      <input type="file" id="csvFile" accept=".csv,.tsv,.txt,.xlsx,.xls" class="hidden" onchange="handleImportFile(event)">
+    </div>
+    <div class="barlist">
+      <h3>Backup</h3>
+      <div class="btnrow">
+        <button class="btn sec" onclick="exportData()">Export (JSON)</button>
+        <button class="btn sec" onclick="document.getElementById('importFile').click()">Restore</button>
+      </div>
+      <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importData(event)">
+      <p class="infoline">Sichere deine komplette Sammlung als JSON – z. B. vor größeren Änderungen.</p>
+    </div>
+    <div class="barlist">
+      <h3>Über</h3>
+      <p class="infoline">Buchdaten von <b>Open Library</b> &amp; <b>Google Books</b>. Barcode-Scan via ZXing.
+      Deine Lese-Daten bleiben in deinem Browser (localStorage) und – wenn verbunden – in deinem Google Sheet.</p>
+    </div>
+  </section>
+</main>
+
+<!-- ============ BOTTOM NAV ============ -->
+<nav class="tabbar">
+  <button data-tab="shelf" class="active" onclick="showView('shelf')"><span class="ico">📚</span>Regal</button>
+  <button data-tab="suggest" onclick="showView('suggest')"><span class="ico">✨</span>Vorschläge</button>
+  <button class="fab-tab" onclick="openAdd()"><span class="ico">＋</span></button>
+  <button data-tab="stats" onclick="showView('stats')"><span class="ico">📊</span>Statistik</button>
+  <button data-tab="settings" onclick="showView('settings')"><span class="ico">⚙️</span>Mehr</button>
+</nav>
+
+<!-- ============ ADD SHEET ============ -->
+<div class="overlay" id="addOverlay">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Hinzufügen</h2><button class="xbtn" onclick="closeAdd()">✕</button></div>
+    <div class="sheet-b">
+      <div class="addmode">
+        <button data-mode="scan" onclick="setAddMode('scan')"><span class="ico">📷</span>Scannen</button>
+        <button data-mode="search" class="active" onclick="setAddMode('search')"><span class="ico">🔍</span>Suchen</button>
+        <button data-mode="manual" onclick="setAddMode('manual')"><span class="ico">✏️</span>Manuell</button>
+      </div>
+
+      <!-- SCAN -->
+      <div id="scanArea">
+        <div class="scanwrap"><video id="scanVideo" playsinline muted></video><div class="scanframe"></div></div>
+        <p class="scanhint" id="scanHint">Halte den ISBN-Barcode (Rückseite) in den Rahmen.</p>
+      </div>
+
+      <!-- SEARCH -->
+      <div id="searchArea">
+        <div class="field" style="margin-bottom:10px">
+          <div class="setrow">
+            <input id="apiSearch" placeholder="Titel, Autor oder ISBN…" onkeydown="if(event.key==='Enter')runApiSearch()" style="flex:1">
+            <button class="btn" style="width:auto;padding:11px 18px;margin:0" onclick="runApiSearch()">Suchen</button>
+          </div>
+        </div>
+        <div class="results" id="apiResults"></div>
+      </div>
+
+      <!-- MANUAL / EDIT FORM -->
+      <form id="itemForm" class="hidden" onsubmit="return saveItem(event)">
+        <input type="hidden" id="f_id">
+        <input type="hidden" id="f_cover">
+        <div class="field">
+          <label>Was ist es?</label>
+          <div class="seg" id="f_type">
+            <button type="button" data-v="book" class="active">📖 Buch</button>
+            <button type="button" data-v="magazine">📰 Zeitschrift</button>
+            <button type="button" data-v="comic">💥 Comic</button>
+          </div>
+        </div>
+        <div class="field"><label>Titel *</label><input id="f_title" required></div>
+        <div class="field"><label>Autor:in / Verlag</label><input id="f_author" placeholder="mehrere mit Komma"></div>
+        <div class="row2">
+          <div class="field"><label>Serie / Reihe</label><input id="f_series" placeholder="optional"></div>
+          <div class="field"><label>Band-Nr.</label><input id="f_seriesIndex" type="number" step="1" placeholder="z. B. 2"></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>Seiten gesamt</label><input id="f_pages" type="number" inputmode="numeric" placeholder="Y"></div>
+          <div class="field"><label>Jahr</label><input id="f_year" type="number" inputmode="numeric"></div>
+          <div class="field"><label>ISBN</label><input id="f_isbn"></div>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <div class="seg" id="f_status">
+            <button type="button" data-v="unread">Ungelesen</button>
+            <button type="button" data-v="reading" class="active">Lese gerade</button>
+            <button type="button" data-v="done">Gelesen</button>
+            <button type="button" data-v="abandoned">Abgebrochen</button>
+          </div>
+        </div>
+        <div class="field" id="curpageField">
+          <label>Aktuelle Seite (X)</label><input id="f_curpage" type="number" inputmode="numeric" placeholder="0">
+        </div>
+        <div class="field"><label>Genre / Themen</label><input id="f_subjects" placeholder="mehrere mit Komma"></div>
+        <div class="field"><label>Notizen</label><textarea id="f_notes" placeholder="Gedanken, Zitate…"></textarea></div>
+        <div class="btnrow">
+          <button type="button" class="btn danger hidden" id="delBtn" onclick="deleteItem()">Löschen</button>
+          <button type="submit" class="btn">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DETAIL SHEET ============ -->
+<div class="overlay" id="detailOverlay">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Details</h2>
+      <button class="xbtn" onclick="editCurrent()" title="Bearbeiten" style="font-size:15px">✏️</button>
+      <button class="xbtn" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="sheet-b" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- ============ IMPORT WIZARD ============ -->
+<div class="overlay" id="importOverlay">
+  <div class="sheet">
+    <div class="sheet-h"><h2>Import zuordnen</h2><button class="xbtn" onclick="closeImport()">✕</button></div>
+    <div class="sheet-b" id="importBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>
+/* =====================================================================
+   Mein Leseregal – privates Lese-Tracking mit Vorschlägen
+   ===================================================================== */
+
+/* ---- Sync-Konfig: nach dem Apps-Script-Deploy hier die /exec-URL eintragen ---- */
+const ENDPOINT = ""; // z.B. "https://script.google.com/macros/s/XXXX/exec"
+
+const LS_KEY = "leseregal_data_v1";
+const LS_ROOM = "leseregal_room";
+const LS_DISMISS = "leseregal_dismissed";
+
+const TYPES = {
+  book:{label:"Buch", icon:"📖"},
+  magazine:{label:"Zeitschrift", icon:"📰"},
+  comic:{label:"Comic", icon:"💥"}
+};
+const STATUS = {
+  unread:{label:"Ungelesen", cls:"st-unread"},
+  reading:{label:"Lese gerade", cls:"st-reading"},
+  done:{label:"Gelesen", cls:"st-done"},
+  abandoned:{label:"Abgebrochen", cls:"st-abandoned"}
+};
+
+let state = { items:[], updatedAt:0 };
+let dismissed = {};            // key -> true (nicht mehr vorschlagen)
+let room = localStorage.getItem(LS_ROOM) || "";
+let activeType = "all";
+let addMode = "search";
+let currentDetailId = null;
+let codeReader = null;
+
+/* ---------- utils ---------- */
+const $ = s => document.querySelector(s);
+const uid = () => 'i'+Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const now = () => Date.now();
+const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => (s||"").toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g," ").trim();
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200); }
+function itemKey(o){ return norm((o.title||"").slice(0,40))+"|"+norm((o.authors&&o.authors[0])||o.author||""); }
+
+/* ---------- persistence ---------- */
+function load(){
+  try{ const r=localStorage.getItem(LS_KEY); if(r) state=JSON.parse(r); }catch(e){}
+  if(!Array.isArray(state.items)) state.items=[];
+  try{ dismissed=JSON.parse(localStorage.getItem(LS_DISMISS)||"{}"); }catch(e){ dismissed={}; }
+}
+function persist(){ state.updatedAt=now(); localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function saveDismissed(){ localStorage.setItem(LS_DISMISS, JSON.stringify(dismissed)); }
+function liveItems(){ return state.items.filter(i=>!i.deleted); }
+
+/* =====================================================================
+   SYNC  (Google Apps Script + Sheet, item-level merge → kein Datenverlust)
+   ===================================================================== */
+function setSync(mode, text){
+  const dot=$("#syncDot");
+  dot.className="sync-dot"+(mode?(" "+mode):"");
+  $("#syncText").textContent=text || (room?("Code: "+room):"Lokal");
+}
+function saveSyncCode(){
+  const v=($("#syncCodeInput").value||"").trim().toLowerCase().replace(/\s+/g,"-");
+  if(!v){ toast("Bitte einen Code eingeben"); return; }
+  room=v; localStorage.setItem(LS_ROOM, room);
+  toast("Verbunden als „"+room+"“"); setSync("busy","synchronisiere…");
+  doSync(true);
+}
+function mergeItems(remote){
+  if(!remote||!Array.isArray(remote.items)) return false;
+  const map={}; state.items.forEach(i=>map[i.id]=i);
+  let changed=false;
+  remote.items.forEach(r=>{
+    const cur=map[r.id];
+    if(!cur || (r.updatedAt||0) > (cur.updatedAt||0)){ map[r.id]=r; changed=true; }
+  });
+  state.items=Object.values(map);
+  return changed;
+}
+async function doSync(showMsg){
+  if(!ENDPOINT || !room){ if(showMsg) toast(ENDPOINT?"Erst Sync-Code setzen":"Sync-URL fehlt (siehe Anleitung)"); setSync(room?"off":"","" ); return; }
+  setSync("busy","synchronisiere…");
+  try{
+    // 1) remote laden + mergen
+    const res=await fetch(ENDPOINT+"?"+new URLSearchParams({room}),{redirect:"follow"});
+    const j=await res.json();
+    if(j&&j.ok&&j.data){ mergeItems(j.data); }
+    persist();
+    // 2) merged zurückschreiben (no-cors → Antwort nicht lesbar, ok)
+    const body=JSON.stringify({room, data:JSON.stringify(state)});
+    await fetch(ENDPOINT,{method:"POST", body, mode:"no-cors", redirect:"follow", headers:{"Content-Type":"text/plain;charset=utf-8"}});
+    setSync("on"); $("#syncInfo").textContent="Zuletzt synchronisiert: "+new Date().toLocaleString('de-DE');
+    renderAll();
+    if(showMsg) toast("Synchronisiert ✓");
+  }catch(e){
+    console.warn(e); setSync("off","Offline – Cache"); if(showMsg) toast("Sync fehlgeschlagen (offline?)");
+  }
+}
+let syncTimer=null;
+function scheduleSync(){ if(!ENDPOINT||!room) return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>doSync(false),1200); }
+
+/* =====================================================================
+   BOOK APIs  (Open Library primär, Google Books Fallback)
+   ===================================================================== */
+const OL_COVER = (o)=> o.cover_i?`https://covers.openlibrary.org/b/id/${o.cover_i}-M.jpg`
+                    : (o.isbn?`https://covers.openlibrary.org/b/isbn/${o.isbn}-M.jpg`:"");
+
+function parseSeries(title){
+  // erkennt "Titel (Reihe, #2)" / "Reihe Bd. 2" / "Reihe Vol. 2"
+  let m = title && title.match(/\(([^,()]+?)[,\s]+#?\s*(\d+)\)/);
+  if(m) return {series:m[1].trim(), idx:+m[2]};
+  m = title && title.match(/[,–-]\s*(?:Bd\.?|Band|Vol\.?|Volume|Teil|#)\s*(\d+)/i);
+  if(m) return {series:title.replace(m[0],"").trim(), idx:+m[1]};
+  return {series:"", idx:null};
+}
+function normOL(d){
+  const isbn=(d.isbn&&d.isbn[0])|| (d.isbn_13&&d.isbn_13[0])||"";
+  const ps=parseSeries(d.title||"");
+  return {
+    title:d.title||"", authors:d.author_name||[], isbn,
+    cover: OL_COVER({cover_i:d.cover_i, isbn}),
+    pageCount:d.number_of_pages_median||"", year:d.first_publish_year||"",
+    publisher:(d.publisher&&d.publisher[0])||"",
+    subjects:(d.subject||[]).slice(0,6),
+    series:ps.series, seriesIndex:ps.idx, source:"OpenLibrary"
+  };
+}
+function normGB(v){
+  const info=v.volumeInfo||{};
+  let isbn=""; (info.industryIdentifiers||[]).forEach(x=>{ if(x.type==="ISBN_13") isbn=x.identifier; else if(!isbn&&x.type==="ISBN_10") isbn=x.identifier; });
+  const ps=parseSeries(info.title+(info.subtitle?(" "+info.subtitle):""));
+  let cover=""; if(info.imageLinks) cover=(info.imageLinks.thumbnail||info.imageLinks.smallThumbnail||"").replace("http:","https:");
+  return {
+    title:info.title||"", authors:info.authors||[], isbn,
+    cover, pageCount:info.pageCount||"", year:(info.publishedDate||"").slice(0,4),
+    publisher:info.publisher||"", subjects:(info.categories||[]).slice(0,6),
+    series:ps.series, seriesIndex:ps.idx, source:"GoogleBooks"
+  };
+}
+async function apiSearch(q){
+  q=q.trim(); if(!q) return [];
+  const isIsbn = /^[\d\-\sxX]{10,17}$/.test(q) && q.replace(/\D/g,"").length>=10;
+  if(isIsbn) return await lookupISBN(q.replace(/[^\dxX]/g,""));
+  let out=[];
+  try{
+    const r=await fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=12&fields=title,author_name,cover_i,isbn,number_of_pages_median,first_publish_year,publisher,subject`);
+    const j=await r.json(); out=(j.docs||[]).map(normOL).filter(x=>x.title);
+  }catch(e){}
+  if(out.length<3){
+    try{
+      const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=12`);
+      const j=await r.json(); const gb=(j.items||[]).map(normGB).filter(x=>x.title);
+      const seen=new Set(out.map(itemKey)); gb.forEach(x=>{ if(!seen.has(itemKey(x))) out.push(x); });
+    }catch(e){}
+  }
+  return out.slice(0,15);
+}
+async function lookupISBN(isbn){
+  // Open Library
+  try{
+    const r=await fetch(`https://openlibrary.org/search.json?isbn=${isbn}&fields=title,author_name,cover_i,isbn,number_of_pages_median,first_publish_year,publisher,subject`);
+    const j=await r.json(); if(j.docs&&j.docs.length){ const o=normOL(j.docs[0]); if(!o.isbn)o.isbn=isbn; return [o]; }
+  }catch(e){}
+  // Google Books
+  try{
+    const r=await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    const j=await r.json(); if(j.items&&j.items.length){ const o=normGB(j.items[0]); if(!o.isbn)o.isbn=isbn; return [o]; }
+  }catch(e){}
+  return [];
+}
+
+/* =====================================================================
+   ADD  (Scan / Search / Manual)
+   ===================================================================== */
+function openAdd(item){
+  $("#addOverlay").classList.add("show");
+  if(item){ setAddMode("manual"); fillForm(item); }
+  else { setAddMode("search"); resetForm(); }
+}
+function closeAdd(){ $("#addOverlay").classList.remove("show"); stopScan(); }
+function setAddMode(m){
+  addMode=m;
+  document.querySelectorAll(".addmode button").forEach(b=>b.classList.toggle("active",b.dataset.mode===m));
+  $("#scanArea").classList.toggle("show", m==="scan");
+  $("#searchArea").classList.toggle("hidden", m!=="search");
+  $("#itemForm").classList.toggle("hidden", m!=="manual");
+  if(m==="scan") startScan(); else stopScan();
+  if(m==="manual" && !$("#f_id").value) { /* keep whatever prefilled */ }
+}
+
+/* --- Barcode scan (ZXing) --- */
+async function startScan(){
+  const hint=$("#scanHint");
+  if(typeof ZXing==="undefined"){ hint.textContent="Scanner-Bibliothek nicht geladen (Internet?). Nutze „Suchen“."; return; }
+  try{
+    codeReader = new ZXing.BrowserMultiFormatReader();
+    hint.textContent="Kamera startet…";
+    await codeReader.decodeFromVideoDevice(null, $("#scanVideo"), (result, err)=>{
+      if(result){
+        const code=result.getText().replace(/\D/g,"");
+        if(code.length>=10){
+          stopScan();
+          hint.textContent="ISBN "+code+" erkannt – lade Daten…";
+          if(navigator.vibrate) navigator.vibrate(60);
+          handleScanned(code);
+        }
+      }
+    });
+    hint.textContent="Halte den ISBN-Barcode in den Rahmen.";
+  }catch(e){
+    console.warn(e);
+    hint.textContent="Kamera nicht verfügbar. Erlaube Kamerazugriff oder nutze „Suchen“.";
+  }
+}
+function stopScan(){ try{ if(codeReader){ codeReader.reset(); codeReader=null; } }catch(e){} }
+async function handleScanned(isbn){
+  const res=await lookupISBN(isbn);
+  if(res.length){ setAddMode("manual"); fillForm(res[0]); toast("Gefunden – bitte prüfen"); }
+  else{ setAddMode("manual"); resetForm(); $("#f_isbn").value=isbn; toast("Nichts gefunden – manuell ergänzen"); }
+}
+
+/* --- API search UI --- */
+let searchSeq=0;
+async function runApiSearch(){
+  const q=$("#apiSearch").value; const box=$("#apiResults");
+  if(!q.trim()){ box.innerHTML=""; return; }
+  const my=++searchSeq;
+  box.innerHTML='<div class="loading"><div class="spinner"></div>Suche…</div>';
+  const res=await apiSearch(q);
+  if(my!==searchSeq) return;
+  if(!res.length){ box.innerHTML='<div class="loading">Nichts gefunden. Versuch „Manuell“.</div>'; return; }
+  box.innerHTML=res.map((r,i)=>`
+    <div class="res" onclick='pickResult(${i})'>
+      ${r.cover?`<img class="rc" src="${esc(r.cover)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'rc',textContent:'📖'}))">`:`<div class="rc">📖</div>`}
+      <div class="ri">
+        <div class="rt">${esc(r.title)}</div>
+        <div class="ra">${esc(r.authors.join(", ")||"—")}</div>
+        <div class="rm">${[r.year, r.pageCount?r.pageCount+" S.":"", r.source].filter(Boolean).join(" · ")}</div>
+      </div>
+    </div>`).join("");
+  window._lastResults=res;
+}
+function pickResult(i){ const r=window._lastResults[i]; setAddMode("manual"); fillForm(r); }
+
+/* =====================================================================
+   FORM
+   ===================================================================== */
+function segVal(id){ const el=$(id).querySelector(".active"); return el?el.dataset.v:""; }
+function segSet(id,v){ $(id).querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.v===v)); }
+document.addEventListener("click",e=>{
+  const b=e.target.closest("#f_type button, #f_status button, #itemForm .seg button");
+  if(b){ b.parentElement.querySelectorAll("button").forEach(x=>x.classList.remove("active")); b.classList.add("active");
+    if(b.parentElement.id==="f_status") toggleCurpage(); }
+});
+function toggleCurpage(){ const st=segVal("#f_status"); $("#curpageField").style.display=(st==="reading"||st==="abandoned")?"block":"none"; }
+
+function resetForm(){
+  $("#f_id").value=""; $("#f_cover").value="";
+  ["f_title","f_author","f_series","f_seriesIndex","f_pages","f_year","f_isbn","f_curpage","f_subjects","f_notes"].forEach(k=>$("#"+k).value="");
+  segSet("#f_type","book"); segSet("#f_status","reading"); toggleCurpage(); $("#delBtn").classList.add("hidden");
+}
+function fillForm(o){
+  resetForm();
+  $("#f_id").value=o.id||"";
+  $("#f_cover").value=o.cover||"";
+  $("#f_title").value=o.title||"";
+  $("#f_author").value=(o.authors?o.authors.join(", "):o.author)||"";
+  $("#f_series").value=o.series||"";
+  $("#f_seriesIndex").value=(o.seriesIndex!=null?o.seriesIndex:"");
+  $("#f_pages").value=o.pageCount||"";
+  $("#f_year").value=o.year||"";
+  $("#f_isbn").value=o.isbn||"";
+  $("#f_curpage").value=o.currentPage||"";
+  $("#f_subjects").value=(o.subjects?o.subjects.join(", "):"")||"";
+  $("#f_notes").value=o.notes||"";
+  if(o.type) segSet("#f_type",o.type);
+  if(o.status) segSet("#f_status",o.status);
+  if(o.id) $("#delBtn").classList.remove("hidden");
+  toggleCurpage();
+}
+function saveItem(e){
+  e.preventDefault();
+  const id=$("#f_id").value || uid();
+  const existing=state.items.find(i=>i.id===id);
+  const pages=parseInt($("#f_pages").value)||0;
+  let cur=parseInt($("#f_curpage").value)||0;
+  const status=segVal("#f_status");
+  if(status==="done") cur=pages||cur;
+  if(status==="unread") cur=0;
+  const item={
+    id, type:segVal("#f_type"),
+    title:$("#f_title").value.trim(),
+    authors:$("#f_author").value.split(",").map(s=>s.trim()).filter(Boolean),
+    series:$("#f_series").value.trim(),
+    seriesIndex: $("#f_seriesIndex").value!==""?parseInt($("#f_seriesIndex").value):null,
+    pageCount:pages, currentPage:Math.min(cur,pages||cur),
+    year:$("#f_year").value.trim(), isbn:$("#f_isbn").value.trim().replace(/[^\dxX]/g,""),
+    cover:$("#f_cover").value,
+    subjects:$("#f_subjects").value.split(",").map(s=>s.trim()).filter(Boolean),
+    notes:$("#f_notes").value.trim(),
+    status, deleted:false,
+    dateAdded: existing?existing.dateAdded:now(),
+    dateFinished: status==="done" ? (existing&&existing.status==="done"&&existing.dateFinished?existing.dateFinished:now()) : null,
+    updatedAt: now()
+  };
+  if(existing) Object.assign(existing,item); else state.items.push(item);
+  persist(); scheduleSync(); renderAll(); closeAdd();
+  toast(existing?"Aktualisiert ✓":"Zum Regal hinzugefügt ✓");
+  return false;
+}
+function deleteItem(){
+  const id=$("#f_id").value; const it=state.items.find(i=>i.id===id);
+  if(!it) return;
+  if(!confirm("„"+it.title+"“ wirklich löschen?")) return;
+  it.deleted=true; it.updatedAt=now();
+  persist(); scheduleSync(); renderAll(); closeAdd(); closeDetail(); toast("Gelöscht");
+}
+
+/* =====================================================================
+   DETAIL
+   ===================================================================== */
+function openDetail(id){
+  const it=liveItems().find(i=>i.id===id); if(!it) return;
+  currentDetailId=id;
+  const pct=it.pageCount?Math.round(100*(it.currentPage||0)/it.pageCount):(it.status==="done"?100:0);
+  const cover=it.cover?`<img class="dc" src="${esc(it.cover)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'dc',textContent:'${TYPES[it.type].icon}'}))">`:`<div class="dc">${TYPES[it.type].icon}</div>`;
+  $("#detailBody").innerHTML=`
+    <div class="detail-hero">
+      ${cover}
+      <div class="di">
+        <h2>${esc(it.title)}</h2>
+        <div class="da">${esc((it.authors||[]).join(", ")||"—")}</div>
+        <div class="dtags">
+          <span class="dtag">${TYPES[it.type].icon} ${TYPES[it.type].label}</span>
+          <span class="dtag">${STATUS[it.status].label}</span>
+          ${it.series?`<span class="dtag" style="color:var(--accent)">${esc(it.series)}${it.seriesIndex!=null?` #${it.seriesIndex}`:""}</span>`:""}
+          ${it.year?`<span class="dtag">${esc(it.year)}</span>`:""}
+        </div>
+      </div>
+    </div>
+    <div class="progblock">
+      <div class="progtop"><span style="color:var(--muted);font-size:13px">Fortschritt</span><span class="pct">${pct}%</span></div>
+      <div class="bigbar"><span style="width:${pct}%"></span></div>
+      <div class="pageset">
+        <button class="stepbtn" onclick="bumpPage(-10)">–</button>
+        <input id="detPage" type="number" inputmode="numeric" value="${it.currentPage||0}" onchange="setPage(this.value)">
+        <span style="color:var(--muted)">/ ${it.pageCount||"?"} Seiten</span>
+        <button class="stepbtn" onclick="bumpPage(10)">+</button>
+      </div>
+      <div class="seg" style="margin-top:12px" id="detStatus">
+        ${Object.keys(STATUS).map(s=>`<button data-v="${s}" class="${it.status===s?'active':''}" onclick="setStatus('${s}')">${STATUS[s].label}</button>`).join("")}
+      </div>
+    </div>
+    ${it.subjects&&it.subjects.length?`<div class="dtags" style="margin-bottom:16px">${it.subjects.map(s=>`<span class="dtag">${esc(s)}</span>`).join("")}</div>`:""}
+    ${it.notes?`<div class="barlist"><h3>Notizen</h3><p style="color:var(--muted);font-size:14px;white-space:pre-wrap;margin:0">${esc(it.notes)}</p></div>`:""}
+    ${it.isbn?`<p class="infoline">ISBN ${esc(it.isbn)}${it.publisher?" · "+esc(it.publisher):""}</p>`:""}
+  `;
+  $("#detailOverlay").classList.add("show");
+}
+function closeDetail(){ $("#detailOverlay").classList.remove("show"); currentDetailId=null; }
+function editCurrent(){ const it=liveItems().find(i=>i.id===currentDetailId); if(it){ closeDetail(); openAdd(it); } }
+function _cur(){ return state.items.find(i=>i.id===currentDetailId); }
+function setPage(v){
+  const it=_cur(); if(!it) return;
+  let p=parseInt(v)||0; p=Math.max(0,Math.min(p, it.pageCount||p));
+  it.currentPage=p;
+  if(it.pageCount && p>=it.pageCount && it.status!=="done"){ it.status="done"; it.dateFinished=now(); }
+  else if(p>0 && it.status==="unread"){ it.status="reading"; }
+  it.updatedAt=now(); persist(); scheduleSync(); openDetail(it.id); renderShelf();
+}
+function bumpPage(d){ const it=_cur(); if(!it) return; setPage((it.currentPage||0)+d); }
+function setStatus(s){
+  const it=_cur(); if(!it) return;
+  it.status=s;
+  if(s==="done"){ it.currentPage=it.pageCount||it.currentPage; it.dateFinished=now(); }
+  if(s==="unread"){ it.currentPage=0; it.dateFinished=null; }
+  it.updatedAt=now(); persist(); scheduleSync(); openDetail(it.id); renderShelf();
+}
+
+/* =====================================================================
+   RENDER  – Shelf
+   ===================================================================== */
+function renderTypeFilters(){
+  const items=liveItems();
+  const cnt=t=>t==="all"?items.length:items.filter(i=>i.type===t).length;
+  const defs=[["all","Alle"],["book","📖 Bücher"],["magazine","📰 Zeitschriften"],["comic","💥 Comics"]];
+  $("#typeFilters").innerHTML=defs.map(([v,l])=>`<button class="chip ${activeType===v?'active':''}" onclick="setType('${v}')">${l} <span style="opacity:.6">${cnt(v)}</span></button>`).join("");
+}
+function setType(t){ activeType=t; renderTypeFilters(); renderShelf(); }
+function renderShelf(){
+  const q=norm($("#shelfSearch").value);
+  const sf=$("#statusFilter").value, sort=$("#sortBy").value;
+  let items=liveItems();
+  if(activeType!=="all") items=items.filter(i=>i.type===activeType);
+  if(sf!=="all") items=items.filter(i=>i.status===sf);
+  if(q) items=items.filter(i=> norm(i.title+" "+(i.authors||[]).join(" ")+" "+(i.series||"")+" "+(i.subjects||[]).join(" ")).includes(q));
+  const prog=i=>i.pageCount?(i.currentPage||0)/i.pageCount:(i.status==="done"?1:0);
+  const cmp={
+    added:(a,b)=>b.dateAdded-a.dateAdded,
+    title:(a,b)=>a.title.localeCompare(b.title,'de'),
+    author:(a,b)=>((a.authors||[])[0]||"").localeCompare((b.authors||[])[0]||"",'de'),
+    series:(a,b)=>(a.series||"~").localeCompare(b.series||"~",'de')||((a.seriesIndex||0)-(b.seriesIndex||0)),
+    progress:(a,b)=>prog(b)-prog(a),
+    finished:(a,b)=>(b.dateFinished||0)-(a.dateFinished||0)
+  }[sort];
+  items=items.slice().sort(cmp);
+  $("#shelfCount").textContent=items.length+" Titel";
+  const grid=$("#shelfGrid");
+  if(!items.length){
+    grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="big">📚</div><h3>${liveItems().length?"Nichts gefunden":"Dein Regal ist leer"}</h3><p>${liveItems().length?"Andere Filter probieren.":"Tippe unten auf ＋ und scanne dein erstes Buch."}</p></div>`;
+    return;
+  }
+  grid.innerHTML=items.map(i=>{
+    const pct=i.pageCount?Math.round(100*(i.currentPage||0)/i.pageCount):(i.status==="done"?100:0);
+    const cover=i.cover?`<img src="${esc(i.cover)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'noimg',textContent:'${TYPES[i.type].icon}'}))">`:`<div class="noimg">${TYPES[i.type].icon}</div>`;
+    return `<div class="book" onclick="openDetail('${i.id}')">
+      <div class="cover">
+        ${cover}
+        <span class="type-badge">${TYPES[i.type].icon}</span>
+        <span class="status-badge ${STATUS[i.status].cls}" title="${STATUS[i.status].label}"></span>
+        ${(i.status==="reading"||i.status==="abandoned")&&pct>0?`<div class="progbar"><span style="width:${pct}%"></span></div>`:""}
+      </div>
+      <div class="bmeta">
+        <div class="btitle">${esc(i.title)}</div>
+        <div class="bauthor">${esc((i.authors||[]).join(", ")||"—")}</div>
+        ${i.series?`<div class="bseries">${esc(i.series)}${i.seriesIndex!=null?` #${i.seriesIndex}`:""}</div>`:""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* =====================================================================
+   SUGGESTIONS  – „Schon gelesen?“ Deck
+   ===================================================================== */
+let deck=[], deckIdx=0, deckLoaded=false;
+
+function ownedKeys(){ const s=new Set(), isbns=new Set(); liveItems().forEach(i=>{ s.add(itemKey(i)); if(i.isbn) isbns.add(i.isbn); }); return {s,isbns}; }
+function isKnown(o, ok){ const k=itemKey(o); return ok.s.has(k) || (o.isbn&&ok.isbns.has(o.isbn)) || dismissed[k]; }
+
+function readSignals(){
+  const engaged=liveItems().filter(i=>i.status!=="unread");
+  const authors={}, subjects={}, series={}; const years=[];
+  engaged.forEach(i=>{
+    (i.authors||[]).forEach(a=>{ if(a) authors[a]=(authors[a]||0)+1; });
+    (i.subjects||[]).forEach(s=>{ if(s) subjects[s]=(subjects[s]||0)+1; });
+    if(i.year) years.push(+i.year);
+    if(i.series){ (series[i.series]=series[i.series]||{name:i.series, idx:new Set(), authors:i.authors||[]}); if(i.seriesIndex!=null) series[i.series].idx.add(i.seriesIndex); }
+  });
+  const top=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  return {authors:top(authors), subjects:top(subjects), series:Object.values(series), years};
+}
+
+async function buildDeck(){
+  const wrap=$("#deckWrap");
+  wrap.innerHTML='<div class="loading"><div class="spinner"></div>Analysiere dein Leseverhalten…</div>';
+  const ok=ownedKeys();
+  const sig=readSignals();
+  const cand=[]; const seen=new Set();
+  const push=(o,why,cls)=>{ if(!o||!o.title) return; if(isKnown(o,ok)) return; const k=itemKey(o); if(seen.has(k))return; seen.add(k); o.why=why; o.whyCls=cls; cand.push(o); };
+
+  // 1) Serien-Lücken & nächster Band  (stärkstes Signal)
+  for(const s of sig.series.slice(0,6)){
+    const idxs=[...s.idx].filter(n=>!isNaN(n));
+    if(!idxs.length) continue;
+    const max=Math.max(...idxs);
+    const missing=[]; for(let n=1;n<=max+1;n++) if(!s.idx.has(n)) missing.push(n);
+    for(const band of missing.slice(0,3)){
+      try{
+        const res=await apiSearch(`${s.name} ${band}`);
+        let hit=res.find(r=>norm(r.title).includes(norm(s.name).split(" ")[0])) || res[0];
+        if(hit){ hit.series=hit.series||s.name; hit.seriesIndex=hit.seriesIndex||band;
+          push(hit, `Reihe „${s.name}“ · Band ${band} fehlt dir`, ""); }
+      }catch(e){}
+    }
+  }
+  // 2) Gleiche Autor:innen
+  for(const a of sig.authors.slice(0,5)){
+    try{ const res=await apiSearch(`author:${a}`); res.slice(0,6).forEach(r=>push(r,`Weil du gern ${a} liest`,"author")); }catch(e){}
+  }
+  // 3) Genre / Themen
+  for(const subj of sig.subjects.slice(0,4)){
+    try{
+      const r=await fetch(`https://openlibrary.org/subjects/${encodeURIComponent(subj.toLowerCase().replace(/\s+/g,"_"))}.json?limit=12`);
+      const j=await r.json();
+      (j.works||[]).forEach(w=>push({
+        title:w.title, authors:(w.authors||[]).map(x=>x.name), isbn:"",
+        cover:w.cover_id?`https://covers.openlibrary.org/b/id/${w.cover_id}-M.jpg`:"",
+        year:w.first_publish_year||"", subjects:[subj], series:"", seriesIndex:null
+      }, `Genre: ${subj}`, "subject"));
+    }catch(e){}
+  }
+  // 4) Zeitraum / Klassiker – populäre Titel im Lieblingsgenre/-jahrzehnt
+  if(sig.subjects[0]){
+    try{
+      const res=await apiSearch(`subject:${sig.subjects[0]}`);
+      res.slice(0,6).forEach(r=>push(r,`Klassiker im Bereich ${sig.subjects[0]}`,"era"));
+    }catch(e){}
+  }
+
+  // Reihenfolge: Serien zuerst, dann Autor, Genre, Klassiker – leicht durchmischt je Gruppe
+  const order={"":0}; // series-why has empty cls
+  cand.sort((a,b)=> ({"":0,"author":1,"subject":2,"era":3}[a.whyCls] - {"":0,"author":1,"subject":2,"era":3}[b.whyCls]) );
+  deck=cand.slice(0,50); deckIdx=0; deckLoaded=true;
+  renderDeck();
+}
+
+function renderDeck(){
+  const wrap=$("#deckWrap");
+  if(liveItems().filter(i=>i.status!=="unread").length<2){
+    wrap.innerHTML=`<div class="empty"><div class="big">✨</div><h3>Noch zu wenig Daten</h3><p>Füge ein paar gelesene Titel hinzu – dann schlage ich dir hier vor, was du wahrscheinlich auch schon kennst.</p></div>`;
+    return;
+  }
+  if(!deckLoaded){ wrap.innerHTML=`<div class="deckhead"><h2>Schon gelesen?</h2><p>Auf Basis deiner Bücher schlage ich Titel vor, die du vielleicht kennst – zum Sammeln vergessener Bücher.</p></div><button class="btn" onclick="buildDeck()" style="margin-top:8px">✨ Vorschläge laden</button>`; return; }
+  if(deckIdx>=deck.length){
+    wrap.innerHTML=`<div class="empty"><div class="big">🎉</div><h3>Alles durch!</h3><p>Du hast alle Vorschläge bewertet.</p></div><button class="btn" onclick="buildDeck()">Neue Runde laden</button>`;
+    return;
+  }
+  const o=deck[deckIdx];
+  const cover=o.cover?`<img src="${esc(o.cover)}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:'📖'}))">`:`<div class="ph">📖</div>`;
+  wrap.innerHTML=`
+    <div class="deckhead"><h2>Schon gelesen?</h2><p>Kennst du diesen Titel? Dann rein ins Regal.</p></div>
+    <div class="scard">
+      <div class="scover">${cover}</div>
+      <div class="sb">
+        <span class="why ${o.whyCls}">${esc(o.why)}</span>
+        <h3>${esc(o.title)}</h3>
+        <div class="sa">${esc((o.authors||[]).join(", ")||"—")}</div>
+        <div class="sm">${[o.year, o.pageCount?o.pageCount+" S.":""].filter(Boolean).join(" · ")}</div>
+      </div>
+    </div>
+    <div class="deckbtns">
+      <button class="db-read" onclick="deckAction('done')">✓ Kenne ich – ins Regal</button>
+      <button class="db-part" onclick="deckAction('reading')">Teilweise gelesen</button>
+      <button class="db-no" onclick="deckAction('dismiss')">Kenne ich nicht</button>
+      <button class="db-skip" onclick="deckAction('skip')">Später ansehen →</button>
+    </div>
+    <div class="deckprog">${deckIdx+1} / ${deck.length}</div>`;
+}
+function deckAction(a){
+  const o=deck[deckIdx]; if(!o) return;
+  const k=itemKey(o);
+  if(a==="dismiss"){ dismissed[k]=1; saveDismissed(); deckIdx++; renderDeck(); return; }
+  if(a==="skip"){ deck.push(o); deckIdx++; renderDeck(); return; }
+  // done / reading → als Eintrag anlegen (Vorschlag als „prefill“, Add-Form öffnen zum Bestätigen)
+  dismissed[k]=1; saveDismissed();
+  const pre={ ...o, type:"book", status:a };
+  deckIdx++;
+  openAdd(pre);
+}
+
+/* =====================================================================
+   STATS
+   ===================================================================== */
+function renderStats(){
+  const items=liveItems();
+  const done=items.filter(i=>i.status==="done");
+  const reading=items.filter(i=>i.status==="reading");
+  const pagesRead=items.reduce((s,i)=> s + (i.status==="done"?(i.pageCount||0):(i.currentPage||0)),0);
+  const byType=t=>items.filter(i=>i.type===t).length;
+  const stat=(n,l)=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  let html=`<div class="statgrid">
+    ${stat(items.length,"Titel gesamt")}
+    ${stat(done.length,"Gelesen")}
+    ${stat(reading.length,"Aktuell dabei")}
+    ${stat(pagesRead.toLocaleString('de-DE'),"Seiten gelesen")}
+  </div>`;
+
+  // typ-verteilung
+  const typeRows=["book","magazine","comic"].map(t=>({l:TYPES[t].label,v:byType(t)})).filter(r=>r.v);
+  const maxT=Math.max(1,...typeRows.map(r=>r.v));
+  if(typeRows.length) html+=`<div class="barlist"><h3>Nach Art</h3>${typeRows.map(r=>`<div class="brow"><div class="bl"><span>${r.l}</span><span class="bv">${r.v}</span></div><div class="bt"><span style="width:${100*r.v/maxT}%"></span></div></div>`).join("")}</div>`;
+
+  // top autoren
+  const ac={}; items.forEach(i=>(i.authors||[]).forEach(a=>{if(a)ac[a]=(ac[a]||0)+1;}));
+  const topA=Object.entries(ac).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxA=Math.max(1,...topA.map(x=>x[1]));
+  if(topA.length) html+=`<div class="barlist"><h3>Meistgelesene Autor:innen</h3>${topA.map(([a,n])=>`<div class="brow"><div class="bl"><span>${esc(a)}</span><span class="bv">${n}</span></div><div class="bt"><span style="width:${100*n/maxA}%"></span></div></div>`).join("")}</div>`;
+
+  // serien fortschritt
+  const ser={}; items.forEach(i=>{ if(i.series){ ser[i.series]=ser[i.series]||{t:0,d:0}; ser[i.series].t++; if(i.status==="done")ser[i.series].d++; } });
+  const serRows=Object.entries(ser).sort((a,b)=>b[1].t-a[1].t).slice(0,6);
+  if(serRows.length) html+=`<div class="barlist"><h3>Serien</h3>${serRows.map(([s,o])=>`<div class="brow"><div class="bl"><span>${esc(s)}</span><span class="bv">${o.d}/${o.t}</span></div><div class="bt"><span style="width:${100*o.d/o.t}%"></span></div></div>`).join("")}</div>`;
+
+  if(!items.length) html=`<div class="empty"><div class="big">📊</div><h3>Noch keine Daten</h3><p>Füge Bücher hinzu, um deine Statistik zu sehen.</p></div>`;
+  $("#statsBody").innerHTML=html;
+}
+
+/* =====================================================================
+   DATA im-/export
+   ===================================================================== */
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="leseregal-backup.json"; a.click();
+}
+function importData(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{
+    const j=JSON.parse(rd.result);
+    if(j.items){ mergeItems(j); persist(); scheduleSync(); renderAll(); toast("Importiert ✓"); }
+    else toast("Ungültige Datei");
+  }catch(e){ toast("Fehler beim Import"); } };
+  rd.readAsText(f); ev.target.value="";
+}
+
+/* =====================================================================
+   IMPORT  (Bookshelf / Goodreads / beliebige CSV & Excel)
+   ===================================================================== */
+let importRows=[], importHeaders=[], importMap={};
+
+const FIELD_DEFS=[
+  ["title","Titel *"],["author","Autor:in"],["isbn","ISBN"],["pages","Seiten gesamt"],
+  ["currentPage","Aktuelle Seite"],["year","Jahr"],["rating","Bewertung"],
+  ["status","Status / Regal"],["series","Serie"],["seriesIndex","Band-Nr."],
+  ["subjects","Genre/Themen"],["notes","Notizen"],["cover","Cover-URL"]
+];
+const HEADER_ALIASES={
+  title:["title","titel","name","book","buch","booktitle","book title"],
+  author:["author","authors","autor","autoren","by","verfasser","writer","auteur"],
+  isbn:["isbn","isbn13","isbn 13","isbn_13","isbn-13","isbn10","isbn 10","ean","barcode"],
+  pages:["pages","page count","pagecount","number of pages","seiten","seitenzahl","seitenanzahl","anzahl seiten","length"],
+  currentPage:["current page","aktuelle seite","page","progress page","gelesene seiten","read pages"],
+  year:["year","published","publish year","publication year","published date","date published","jahr","erscheinungsjahr","veröffentlicht","original publication year"],
+  rating:["rating","my rating","bewertung","stars","sterne","score","note"],
+  status:["status","shelf","shelves","exclusive shelf","reading status","read status","regal","regale","lesestatus","state","bookshelf"],
+  series:["series","serie","reihe","collection","saga"],
+  seriesIndex:["volume","band","series number","series index","nr","band-nr","band nr","no","number","#","volume number","issue"],
+  subjects:["genre","genres","category","categories","subject","subjects","kategorie","kategorien","tags","schlagwörter","schlagworte","topic","topics"],
+  notes:["notes","note","notiz","notizen","review","my review","comment","comments","kommentar","beschreibung","description","private notes"],
+  cover:["cover","cover url","coverurl","image","image url","thumbnail","bild","cover image"]
+};
+
+function csvSplit(text){
+  // robuster CSV/TSV Parser (Anführungszeichen, Kommas, Zeilenumbrüche)
+  const delim = (text.split("\t").length > text.split(",").length) ? "\t"
+              : (text.split(";").length > text.split(",").length ? ";" : ",");
+  const rows=[]; let row=[], cur="", q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i], n=text[i+1];
+    if(q){
+      if(c==='"' && n==='"'){ cur+='"'; i++; }
+      else if(c==='"'){ q=false; }
+      else cur+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===delim){ row.push(cur); cur=""; }
+      else if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else if(c==='\r'){ /* skip */ }
+      else cur+=c;
+    }
+  }
+  if(cur.length||row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(x=>String(x).trim()!==""));
+}
+
+function handleImportFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const isXlsx=/\.(xlsx|xls)$/i.test(f.name);
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      let matrix;
+      if(isXlsx){
+        if(typeof XLSX==="undefined"){ toast("Excel-Bibliothek nicht geladen – als CSV exportieren"); return; }
+        const wb=XLSX.read(new Uint8Array(rd.result),{type:"array"});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        matrix=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false});
+      }else{
+        matrix=csvSplit(rd.result);
+      }
+      matrix=matrix.filter(r=>r.some(x=>String(x).trim()!==""));
+      if(matrix.length<2){ toast("Datei enthält keine Zeilen"); return; }
+      importHeaders=matrix[0].map(h=>String(h).trim());
+      importRows=matrix.slice(1).map(r=>{ const o={}; importHeaders.forEach((h,i)=>o[h]=(r[i]!=null?String(r[i]).trim():"")); return o; });
+      autoMap();
+      renderImportUI();
+      $("#importOverlay").classList.add("show");
+    }catch(e){ console.warn(e); toast("Datei konnte nicht gelesen werden"); }
+  };
+  if(isXlsx) rd.readAsArrayBuffer(f); else rd.readAsText(f,"utf-8");
+  ev.target.value="";
+}
+function autoMap(){
+  importMap={};
+  const used=new Set();
+  FIELD_DEFS.forEach(([field])=>{
+    const aliases=HEADER_ALIASES[field]||[field];
+    let best="";
+    for(const h of importHeaders){
+      if(used.has(h)) continue;
+      const hn=norm(h);
+      if(aliases.some(a=>hn===norm(a))){ best=h; break; }
+    }
+    if(!best) for(const h of importHeaders){
+      if(used.has(h)) continue;
+      const hn=norm(h);
+      if(aliases.some(a=>hn.includes(norm(a))||norm(a).includes(hn))){ best=h; break; }
+    }
+    if(best){ importMap[field]=best; used.add(best); }
+  });
+}
+function mapStatus(v){
+  const s=norm(v);
+  if(!s) return "unread";
+  if(/(^| )(read|gelesen|finished|fertig|completed|done|complete|beendet)( |$)/.test(" "+s+" ")) return "done";
+  if(/(currently|reading|lese|dabei|in progress|am lesen|current)/.test(s)) return "reading";
+  if(/(abandon|dnf|abgebrochen|did not finish|paused|pausiert)/.test(s)) return "abandoned";
+  return "unread"; // to-read, wishlist, owned, want to read …
+}
+function guessType(row){
+  const hay=norm([importMap.status&&row[importMap.status], importMap.subjects&&row[importMap.subjects], importMap.series&&row[importMap.series]].filter(Boolean).join(" "));
+  if(/(manga|comic|graphic novel|manhwa|manhua)/.test(hay)) return "comic";
+  if(/(magazine|magazin|zeitschrift|heft|issue)/.test(hay)) return "magazine";
+  return $("#imp_type") ? $("#imp_type").value : "book";
+}
+function renderImportUI(){
+  const opts=(sel)=>`<option value="">— nicht importieren —</option>`+importHeaders.map(h=>`<option value="${esc(h)}" ${sel===h?'selected':''}>${esc(h)}</option>`).join("");
+  const preview=importRows.slice(0,3);
+  $("#importBody").innerHTML=`
+    <p style="color:var(--muted);font-size:13.5px;margin-top:0">Erkannt: <b>${importRows.length} Zeilen</b>, ${importHeaders.length} Spalten. Prüfe die Zuordnung – ich habe sie automatisch geraten.</p>
+    <div class="field">
+      <label>Standard-Art (falls nicht erkennbar)</label>
+      <select id="imp_type"><option value="book">📖 Buch</option><option value="comic">💥 Comic/Manga</option><option value="magazine">📰 Zeitschrift</option></select>
+    </div>
+    <div style="height:1px;background:var(--line);margin:6px 0 16px"></div>
+    ${FIELD_DEFS.map(([field,label])=>`
+      <div class="field" style="margin-bottom:11px">
+        <label>${label}</label>
+        <select onchange="importMap['${field}']=this.value||undefined; refreshImportPreview()">${opts(importMap[field]||"")}</select>
+      </div>`).join("")}
+    <div style="height:1px;background:var(--line);margin:6px 0 14px"></div>
+    <h3 style="font-size:15px;margin-bottom:10px">Vorschau (erste 3)</h3>
+    <div id="impPreview"></div>
+    <label style="display:flex;align-items:center;gap:8px;margin:14px 0;font-size:13.5px;color:var(--muted)">
+      <input type="checkbox" id="imp_fetchcovers" checked style="width:auto"> Cover & fehlende Infos online nachladen (langsamer)
+    </label>
+    <button class="btn" id="impRunBtn" onclick="runImport()">${importRows.length} Titel importieren</button>
+    <p class="infoline">Bereits vorhandene Titel (gleiche ISBN oder Titel+Autor) werden übersprungen, nicht doppelt angelegt.</p>
+  `;
+  refreshImportPreview();
+}
+function rowToItem(row){
+  const g=f=>importMap[f]?(row[importMap[f]]||"").trim():"";
+  const status=importMap.status?mapStatus(g("status")):"unread";
+  const pages=parseInt(g("pages"))||0;
+  let cur=parseInt(g("currentPage"))||0;
+  if(status==="done") cur=pages||cur; if(status==="unread") cur=0;
+  return {
+    type:guessType(row),
+    title:g("title"),
+    authors:g("author").split(/[,;/]|&| und /).map(s=>s.trim()).filter(Boolean),
+    isbn:g("isbn").replace(/[^\dxX]/g,""),
+    pageCount:pages, currentPage:cur,
+    year:(g("year").match(/\d{4}/)||[""])[0],
+    series:g("series"),
+    seriesIndex: g("seriesIndex")!==""?(parseInt(g("seriesIndex"))||null):null,
+    subjects:g("subjects").split(/[,;/]/).map(s=>s.trim()).filter(Boolean),
+    notes:g("notes"), cover:g("cover"),
+    rating: g("rating")?(parseFloat(g("rating").replace(",","."))||null):null,
+    status
+  };
+}
+function refreshImportPreview(){
+  const box=$("#impPreview"); if(!box) return;
+  box.innerHTML=importRows.slice(0,3).map(r=>{
+    const it=rowToItem(r);
+    return `<div class="res"><div class="rc">${TYPES[it.type].icon}</div><div class="ri">
+      <div class="rt">${esc(it.title||"(kein Titel)")}</div>
+      <div class="ra">${esc(it.authors.join(", ")||"—")}</div>
+      <div class="rm">${[STATUS[it.status].label, it.pageCount?it.pageCount+" S.":"", it.series?("Reihe: "+it.series+(it.seriesIndex!=null?" #"+it.seriesIndex:"")):"", it.year].filter(Boolean).join(" · ")}</div>
+    </div></div>`;
+  }).join("");
+}
+async function runImport(){
+  if(!importMap.title){ toast("Bitte mindestens die Titel-Spalte zuordnen"); return; }
+  const btn=$("#impRunBtn"); const fetchCovers=$("#imp_fetchcovers").checked;
+  const ok=ownedKeys();
+  let added=0, skipped=0, done=0;
+  const total=importRows.length;
+  btn.disabled=true;
+  for(const r of importRows){
+    const it=rowToItem(r);
+    done++;
+    if(!it.title){ skipped++; continue; }
+    if(ok.s.has(itemKey(it)) || (it.isbn&&ok.isbns.has(it.isbn))){ skipped++; continue; }
+    // online anreichern, wenn Cover/Seiten fehlen
+    if(fetchCovers && (!it.cover || !it.pageCount)){
+      try{
+        let res=[];
+        if(it.isbn) res=await lookupISBN(it.isbn);
+        if(!res.length) res=await apiSearch(`${it.title} ${it.authors[0]||""}`.trim());
+        if(res.length){
+          const m=res[0];
+          if(!it.cover) it.cover=m.cover||"";
+          if(!it.pageCount) it.pageCount=parseInt(m.pageCount)||0;
+          if(!it.year) it.year=m.year||"";
+          if(!it.isbn) it.isbn=m.isbn||"";
+          if(!it.subjects.length) it.subjects=m.subjects||[];
+          if(!it.series&&m.series){ it.series=m.series; it.seriesIndex=it.seriesIndex??m.seriesIndex; }
+          if(it.status==="done"&&it.pageCount) it.currentPage=it.pageCount;
+        }
+      }catch(e){}
+    }
+    const id=uid();
+    state.items.push({ id, ...it, deleted:false, dateAdded:now(),
+      dateFinished: it.status==="done"?now():null, updatedAt:now() });
+    ok.s.add(itemKey(it)); if(it.isbn) ok.isbns.add(it.isbn);
+    added++;
+    if(done%5===0){ btn.textContent=`Importiere… ${done}/${total}`; persist(); }
+  }
+  persist(); scheduleSync(); renderAll();
+  btn.disabled=false;
+  closeImport();
+  toast(`${added} importiert, ${skipped} übersprungen`);
+}
+function closeImport(){ $("#importOverlay").classList.remove("show"); }
+
+/* =====================================================================
+   VIEWS / INIT
+   ===================================================================== */
+function showView(v){
+  ["shelf","suggest","stats","settings"].forEach(x=>$("#view-"+x).classList.toggle("hidden",x!==v));
+  document.querySelectorAll("nav.tabbar button[data-tab]").forEach(b=>b.classList.toggle("active",b.dataset.tab===v));
+  $("#searchbarWrap").style.display=(v==="shelf")?"flex":"none";
+  if(v==="suggest") renderDeck();
+  if(v==="stats") renderStats();
+  if(v==="settings"){ $("#syncCodeInput").value=room; }
+  window.scrollTo(0,0);
+}
+function renderAll(){ renderTypeFilters(); renderShelf(); if(!$("#view-stats").classList.contains("hidden")) renderStats(); }
+
+function init(){
+  load();
+  if(room){ $("#syncCodeInput") && ($("#syncCodeInput").value=room); setSync(ENDPOINT?"busy":"off"); }
+  else setSync("");
+  renderAll();
+  if(ENDPOINT && room) doSync(false);
+  // beim Wieder-Fokussieren neu syncen
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden && ENDPOINT && room) doSync(false); });
+}
+window.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>
