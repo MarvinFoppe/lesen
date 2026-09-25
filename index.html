@@ -346,7 +346,7 @@
       <div class="field">
         <label>Sync-Code</label>
         <div class="setrow">
-          <input id="syncCodeInput" placeholder="z. B. marvin-buecher" style="flex:1">
+          <input id="syncCodeInput" placeholder="leseregal-marvin" style="flex:1">
           <button class="btn" style="width:auto;padding:11px 18px;margin:0" onclick="saveSyncCode()">Verbinden</button>
         </div>
       </div>
@@ -488,7 +488,7 @@
    ===================================================================== */
 
 /* ---- Sync-Konfig: nach dem Apps-Script-Deploy hier die /exec-URL eintragen ---- */
-const ENDPOINT = ""; // z.B. "https://script.google.com/macros/s/XXXX/exec"
+const ENDPOINT = "https://script.google.com/macros/s/AKfycbz08bAekt5VzrEObqOCgBtB7bOLqd9VYVqS0yCzf1s6mMxQ9GRojX3wpDkkgdbomjm30A/exec"; // geteiltes Apps-Script-Backend (room-isoliert)
 
 const LS_KEY = "leseregal_data_v1";
 const LS_ROOM = "leseregal_room";
@@ -1089,7 +1089,7 @@ function importData(ev){
 /* =====================================================================
    IMPORT  (Bookshelf / Goodreads / beliebige CSV & Excel)
    ===================================================================== */
-let importRows=[], importHeaders=[], importMap={};
+let importRows=[], importHeaders=[], importMap={}, importFormat="generic";
 
 const FIELD_DEFS=[
   ["title","Titel *"],["author","Autor:in"],["isbn","ISBN"],["pages","Seiten gesamt"],
@@ -1163,8 +1163,25 @@ function handleImportFile(ev){
   if(isXlsx) rd.readAsArrayBuffer(f); else rd.readAsText(f,"utf-8");
   ev.target.value="";
 }
+function detectBookshelf(){
+  // Bookshelf-App-Export erkennt man an der charakteristischen Spalten-Signatur
+  const h=importHeaders;
+  return h.includes("Book Id") && h.includes("Bookshelf") && h.includes("Read")
+      && h.includes("Page Count") && h.includes("Authors");
+}
 function autoMap(){
   importMap={};
+  if(detectBookshelf()){
+    importFormat="bookshelf";
+    // feste, korrekte Zuordnung – Status/Genre/Notizen kommen aus den richtigen Spalten
+    const M={ title:"Title", author:"Authors", isbn:"ISBN", pages:"Page Count",
+      currentPage:"Pages Read", year:"Published At", rating:"My Rating",
+      status:"Read", series:"Series", seriesIndex:"Volume",
+      subjects:"Categories", notes:"Description" };
+    for(const k in M){ if(importHeaders.includes(M[k])) importMap[k]=M[k]; }
+    return;
+  }
+  importFormat="generic";
   const used=new Set();
   FIELD_DEFS.forEach(([field])=>{
     const aliases=HEADER_ALIASES[field]||[field];
@@ -1190,6 +1207,14 @@ function mapStatus(v){
   if(/(abandon|dnf|abgebrochen|did not finish|paused|pausiert)/.test(s)) return "abandoned";
   return "unread"; // to-read, wishlist, owned, want to read …
 }
+function bookshelfStatus(row){
+  const val=k=>String(row[k]||"").trim().toLowerCase();
+  const read=val("Read"), wish=val("Wishlist");
+  const ended=val("Ended Reading On"), started=val("Started Reading On");
+  if(read==="1"||read==="true"||read==="yes"||ended) return "done";
+  if(started) return "reading";
+  return "unread"; // inkl. Wishlist / noch nicht gelesen
+}
 function guessType(row){
   const hay=norm([importMap.status&&row[importMap.status], importMap.subjects&&row[importMap.subjects], importMap.series&&row[importMap.series]].filter(Boolean).join(" "));
   if(/(manga|comic|graphic novel|manhwa|manhua)/.test(hay)) return "comic";
@@ -1199,7 +1224,11 @@ function guessType(row){
 function renderImportUI(){
   const opts=(sel)=>`<option value="">— nicht importieren —</option>`+importHeaders.map(h=>`<option value="${esc(h)}" ${sel===h?'selected':''}>${esc(h)}</option>`).join("");
   const preview=importRows.slice(0,3);
+  const bsBadge = importFormat==="bookshelf"
+    ? `<p style="background:rgba(224,164,88,.14);border:1px solid var(--accent);color:var(--accent);font-size:13px;font-weight:600;padding:8px 11px;border-radius:9px;margin:0 0 12px">📚 Bookshelf-Export erkannt – Spalten sind passend vorbelegt (Status kommt aus „Read", Genre aus „Categories").</p>`
+    : "";
   $("#importBody").innerHTML=`
+    ${bsBadge}
     <p style="color:var(--muted);font-size:13.5px;margin-top:0">Erkannt: <b>${importRows.length} Zeilen</b>, ${importHeaders.length} Spalten. Prüfe die Zuordnung – ich habe sie automatisch geraten.</p>
     <div class="field">
       <label>Standard-Art (falls nicht erkennbar)</label>
@@ -1224,7 +1253,8 @@ function renderImportUI(){
 }
 function rowToItem(row){
   const g=f=>importMap[f]?(row[importMap[f]]||"").trim():"";
-  const status=importMap.status?mapStatus(g("status")):"unread";
+  const status=importFormat==="bookshelf" ? bookshelfStatus(row)
+             : (importMap.status?mapStatus(g("status")):"unread");
   const pages=parseInt(g("pages"))||0;
   let cur=parseInt(g("currentPage"))||0;
   if(status==="done") cur=pages||cur; if(status==="unread") cur=0;
